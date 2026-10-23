@@ -66,19 +66,6 @@ export function TrustFooterPill() {
             Client-Side Privacy
           </span>
         </div>
-
-        {/* Divider */}
-        <div
-          className={`h-3 w-[1px] ${
-            isDark ? 'bg-white/10' : 'bg-slate-300'
-          }`}
-        />
-
-        {/* 4. Developer Credit */}
-        <div className="flex items-center gap-1.5 font-mono text-xs">
-          <span className={isDark ? 'text-slate-400' : 'text-slate-500'}>Developer:</span>
-          <span className="font-bold text-indigo-600 dark:text-indigo-400">Tawsif</span>
-        </div>
       </div>
     </div>
   );

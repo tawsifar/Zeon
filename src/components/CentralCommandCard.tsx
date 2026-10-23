@@ -76,6 +76,20 @@ export function CentralCommandCard() {
   const [isProbing, setIsProbing] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState<string | null>(null);
+  const [downloadProgress, setDownloadProgress] = useState(0);
+  const [downloadStatusText, setDownloadStatusText] = useState('Connecting to media source...');
+  const [downloadDetailText, setDownloadDetailText] = useState('Preparing pipeline...');
+  const [downloadSpeedOrSize, setDownloadSpeedOrSize] = useState<string | null>(null);
+  const downloadAbortControllerRef = useRef<AbortController | null>(null);
+  const progressTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (progressTimerRef.current) clearInterval(progressTimerRef.current);
+      if (downloadAbortControllerRef.current) downloadAbortControllerRef.current.abort();
+    };
+  }, []);
+
   const [copied, setCopied] = useState(false);
   const [hasSubmitted, setHasSubmitted] = useState(false);
 
@@ -252,7 +266,21 @@ export function CentralCommandCard() {
     return validateTrimInputs(startInput, endInput, probeResult?.duration);
   }, [isTrimEnabled, startInput, endInput, probeResult?.duration]);
 
-  const handleDownload = () => {
+  const handleCancelDownload = () => {
+    if (downloadAbortControllerRef.current) {
+      downloadAbortControllerRef.current.abort();
+      downloadAbortControllerRef.current = null;
+    }
+    if (progressTimerRef.current) {
+      clearInterval(progressTimerRef.current);
+      progressTimerRef.current = null;
+    }
+    setIsDownloading(false);
+    setDownloadProgress(0);
+    setDownloadSpeedOrSize(null);
+  };
+
+  const handleDownload = async () => {
     if (!url || platform.platform === 'unknown') {
       setDownloadError('Please enter a valid media link first.');
       return;
@@ -270,6 +298,10 @@ export function CentralCommandCard() {
 
     setIsDownloading(true);
     setDownloadError(null);
+    setDownloadProgress(6);
+    setDownloadStatusText('Connecting to media source...');
+    setDownloadDetailText('Locating audio & video streams...');
+    setDownloadSpeedOrSize(null);
 
     const ext = mode === 'audio' ? 'mp3' : 'mp4';
     const cleanTitle = (probeResult?.title || 'zeon_media')
@@ -288,16 +320,157 @@ export function CentralCommandCard() {
       targetFilename = `${cleanTitle}_clip_${startStr}-${endStr}.${ext}`;
     }
 
-    const a = document.createElement('a');
-    a.href = downloadUrl;
-    a.download = targetFilename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    const abortController = new AbortController();
+    downloadAbortControllerRef.current = abortController;
 
-    setTimeout(() => {
-      setIsDownloading(false);
-    }, 6000);
+    if (progressTimerRef.current) clearInterval(progressTimerRef.current);
+
+    // Smooth asymptotic progress ticker while backend downloads/transcodes
+    progressTimerRef.current = setInterval(() => {
+      setDownloadProgress((prev) => {
+        if (prev < 28) {
+          setDownloadStatusText('Contacting platform server...');
+          setDownloadDetailText('Analyzing stream codecs & resolution...');
+          return Math.min(28, prev + Math.floor(Math.random() * 4) + 2);
+        } else if (prev < 58) {
+          setDownloadStatusText(
+            isTrimEnabled
+              ? 'Clipping time range...'
+              : mode === 'audio'
+              ? 'Extracting high-bitrate audio...'
+              : 'Extracting highest resolution stream...'
+          );
+          setDownloadDetailText(
+            isTrimEnabled
+              ? `Precision slice: ${startInput} → ${endInput}`
+              : 'Direct pipe from provider...'
+          );
+          return Math.min(58, prev + Math.floor(Math.random() * 3) + 1);
+        } else if (prev < 80) {
+          setDownloadStatusText('Transcoding & optimizing media...');
+          setDownloadDetailText('Merging MP4 container with faststart...');
+          return Math.min(80, prev + Math.floor(Math.random() * 2) + 1);
+        } else if (prev < 88) {
+          setDownloadStatusText('Finalizing download stream...');
+          setDownloadDetailText('Preparing file transfer...');
+          return Math.min(88, prev + 1);
+        }
+        return prev;
+      });
+    }, 250);
+
+    try {
+      const response = await fetch(downloadUrl, {
+        signal: abortController.signal,
+      });
+
+      if (!response.ok) {
+        if (progressTimerRef.current) clearInterval(progressTimerRef.current);
+        const errorData = await response.json().catch(() => null);
+        const errMsg = errorData?.error || errorData?.message || `Download failed (HTTP ${response.status})`;
+        setDownloadError(errMsg);
+        setIsDownloading(false);
+        setDownloadProgress(0);
+        return;
+      }
+
+      // Backend staging complete, receiving bytes
+      if (progressTimerRef.current) clearInterval(progressTimerRef.current);
+
+      const contentLength = response.headers.get('content-length');
+      const totalBytes = contentLength ? parseInt(contentLength, 10) : 0;
+      const contentType = response.headers.get('content-type') || (mode === 'audio' ? 'audio/mpeg' : 'video/mp4');
+
+      setDownloadStatusText('Streaming to your browser...');
+      setDownloadProgress((prev) => Math.max(prev, 85));
+
+      if (response.body) {
+        const reader = response.body.getReader();
+        const chunks: Uint8Array[] = [];
+        let receivedBytes = 0;
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          if (value) {
+            chunks.push(value);
+            receivedBytes += value.length;
+            if (totalBytes > 0) {
+              const streamPercent = Math.min(99, 85 + Math.round((receivedBytes / totalBytes) * 14));
+              setDownloadProgress(streamPercent);
+              const mbReceived = (receivedBytes / (1024 * 1024)).toFixed(1);
+              const mbTotal = (totalBytes / (1024 * 1024)).toFixed(1);
+              setDownloadSpeedOrSize(`${mbReceived} MB / ${mbTotal} MB`);
+            } else {
+              const mbReceived = (receivedBytes / (1024 * 1024)).toFixed(1);
+              setDownloadSpeedOrSize(`${mbReceived} MB received`);
+              setDownloadProgress((prev) => Math.min(98, prev + 1));
+            }
+          }
+        }
+
+        // 100% Complete! Save to disk
+        setDownloadProgress(100);
+        setDownloadStatusText('Download complete! Saving to device...');
+        setDownloadDetailText('File ready');
+
+        const blob = new Blob(chunks as BlobPart[], { type: contentType });
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = targetFilename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+
+        setTimeout(() => {
+          URL.revokeObjectURL(blobUrl);
+          setIsDownloading(false);
+          setDownloadProgress(0);
+          setDownloadSpeedOrSize(null);
+        }, 2200);
+      } else {
+        const blob = await response.blob();
+        setDownloadProgress(100);
+        setDownloadStatusText('Download complete! Saving to device...');
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = targetFilename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+
+        setTimeout(() => {
+          URL.revokeObjectURL(blobUrl);
+          setIsDownloading(false);
+          setDownloadProgress(0);
+        }, 2200);
+      }
+    } catch (err: unknown) {
+      if (progressTimerRef.current) clearInterval(progressTimerRef.current);
+      if (abortController.signal.aborted) {
+        setIsDownloading(false);
+        setDownloadProgress(0);
+        return;
+      }
+
+      console.warn('Direct stream fetch failed, falling back to standard anchor trigger:', err);
+      // Fallback to standard anchor download so nothing ever breaks
+      setDownloadProgress(100);
+      setDownloadStatusText('Initiating browser download...');
+      const a = document.createElement('a');
+      a.href = downloadUrl;
+      a.download = targetFilename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+
+      setTimeout(() => {
+        setIsDownloading(false);
+        setDownloadProgress(0);
+      }, 3500);
+    }
   };
 
   const isTeraBox = platform.platform === 'terabox' || !!probeResult?.teraBoxFallback;
@@ -836,7 +1009,7 @@ export function CentralCommandCard() {
 
                     {/* Download Glass Button (for public links) */}
                     {!isPrivateRestricted && !isTeraBox && (
-                      <div>
+                      <div className="space-y-3">
                         <LiquidButton
                           type="button"
                           onClick={handleDownload}
@@ -851,7 +1024,7 @@ export function CentralCommandCard() {
                             <div className="flex items-center gap-2">
                               <Loader2 className="w-4 h-4 animate-spin" />
                               <span>
-                                Streaming {isTrimEnabled ? 'Trimmed Clip' : mode === 'video' ? 'Video' : 'Audio'}...
+                                Streaming {isTrimEnabled ? 'Trimmed Clip' : mode === 'video' ? 'Video' : 'Audio'}... ({downloadProgress}%)
                               </span>
                             </div>
                           ) : isTrimEnabled ? (
@@ -870,6 +1043,77 @@ export function CentralCommandCard() {
                             </div>
                           )}
                         </LiquidButton>
+
+                        {/* Live Download Progress Percentage Bar */}
+                        <AnimatePresence>
+                          {isDownloading && (
+                            <motion.div
+                              initial={{ opacity: 0, height: 0, y: -4 }}
+                              animate={{ opacity: 1, height: 'auto', y: 0 }}
+                              exit={{ opacity: 0, height: 0, y: -4 }}
+                              transition={{ duration: 0.25 }}
+                              className={`p-3.5 rounded-2xl border backdrop-blur-xl shadow-lg transition-all ${
+                                isDark
+                                  ? 'bg-neutral-900/90 border-white/15 shadow-[0_8px_32px_rgba(0,0,0,0.4)]'
+                                  : 'bg-white/95 border-indigo-100 shadow-[0_8px_24px_rgba(99,102,241,0.12)]'
+                              }`}
+                            >
+                              {/* Header Row: Status & Live Percentage */}
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-2 min-w-0">
+                                  {downloadProgress === 100 ? (
+                                    <div className="w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-500 flex items-center justify-center shrink-0">
+                                      <CheckCircle2 className="w-3.5 h-3.5" />
+                                    </div>
+                                  ) : (
+                                    <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-500 shrink-0" />
+                                  )}
+                                  <span className={`text-xs font-semibold truncate ${isDark ? 'text-white' : 'text-slate-800'}`}>
+                                    {downloadStatusText}
+                                  </span>
+                                </div>
+
+                                <div className="flex items-center gap-2 shrink-0">
+                                  <span className="font-mono text-xs font-extrabold tracking-tight text-indigo-500 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 px-2 py-0.5 rounded-md border border-indigo-200 dark:border-indigo-800/50">
+                                    {downloadProgress}%
+                                  </span>
+                                  {downloadProgress < 100 && (
+                                    <button
+                                      type="button"
+                                      onClick={handleCancelDownload}
+                                      className="text-[10px] text-slate-400 hover:text-red-400 font-medium px-1.5 py-0.5 rounded transition-colors cursor-pointer"
+                                      title="Cancel download"
+                                    >
+                                      Cancel
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Progress Track & Fill */}
+                              <div className="w-full h-2 rounded-full bg-slate-200 dark:bg-black/50 overflow-hidden relative border border-slate-300/40 dark:border-white/5">
+                                <div
+                                  className={`h-full rounded-full transition-all duration-200 relative ${
+                                    downloadProgress === 100
+                                      ? 'bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.7)]'
+                                      : 'bg-gradient-to-r from-violet-600 via-indigo-500 to-cyan-400 shadow-[0_0_12px_rgba(99,102,241,0.6)]'
+                                  }`}
+                                  style={{ width: `${downloadProgress}%` }}
+                                >
+                                  {downloadProgress < 100 && (
+                                    <div className="absolute inset-0 bg-white/30 animate-pulse" />
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Footer Detail Row */}
+                              <div className="flex items-center justify-between mt-2 text-[10px] text-slate-500 dark:text-slate-400 font-mono">
+                                <span className="truncate pr-2">{downloadDetailText}</span>
+                                {downloadSpeedOrSize && <span className="shrink-0">{downloadSpeedOrSize}</span>}
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
                       </div>
                     )}
 
