@@ -1,36 +1,74 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ZEON — Experimental Media Toolkit & Privacy Engine
 
-## Getting Started
+> ### ⚠️ STRICT LEGAL NOTICE & RESEARCH DISCLAIMER
+> **PLEASE READ BEFORE CLONING OR RUNNING THIS CODE:**
+>
+> 1. **NON-COMMERCIAL PROTOTYPE ONLY:** This repository and software application is strictly an **experimental, educational prototype created solely for personal testing, academic research, and private developer evaluation**.
+> 2. **NO PUBLIC MARKETING OR COMMERCIAL OPERATION:** This project is **not** a commercial product, is not being marketed, does not run advertisements, does not solicit donations or subscriptions, and is not operated as a public commercial service.
+> 3. **NO SEARCH ENGINE INDEXING:** This website is deliberately configured to **block all search engine crawlers and web robots** (`Disallow: /`, `noindex, nofollow`, no cache). It is intentionally kept unindexed from Google, Bing, Yahoo, DuckDuckGo, and other web indexers.
+> 4. **NO HOSTING OR DISTRIBUTION OF COPYRIGHTED CONTENT:** Zeon **does not host, cache, index, or distribute any media files or copyright-protected content** on its servers. All transient operations are piped on-the-fly directly to the end-user's local system for authorized personal backup purposes under fair-use principles. Users are solely responsible for ensuring they possess lawful access to content they interact with.
+> 5. **TRADEMARK ATTRIBUTION:** All product names, logos, platform marks, and registered trademarks displayed in this prototype (including YouTube, TikTok, Instagram, Facebook, X, Spotify, Twitch, Vimeo, Reddit, and Pinterest) remain the property of their respective trademark holders. Their inclusion in this personal UI prototype is strictly nominative and does not imply endorsement, affiliation, or sponsorship.
 
-First, run the development server:
+---
 
+## 🚀 Overview
+
+Zeon combines three media utilities into a unified, high-performance interface:
+
+1. **Universal Stream Pipe (Backend):** Fast single-command media retrieval across 15+ supported web platforms in highest quality MP4 video or MP3 audio via native Linux `yt-dlp` and `ffmpeg` pipelines.
+2. **Precision Range Trimming:** Keyframe-accurate time slicing down to the second, downloading only the exact clipped duration without redundant file transfers.
+3. **Client-Side AI Metadata Stripper (100% In-Browser):** Zero-telemetry binary parser that strips C2PA JUMBF provenance manifests, XMP metadata packets, Midjourney prompts, and EXIF tracking identifiers entirely inside client browser memory using WebAssembly and pure TypeScript with zero server upload.
+
+---
+
+## 🛠️ Architecture & Tech Stack
+
+* **Framework:** Next.js (App Router) + React 19
+* **Typography:** Plus Jakarta Sans & JetBrains Mono (via `next/font`)
+* **Styling:** Tailwind CSS v4 + Glassmorphism UI
+* **Physics & Motion:** Motion (Framer Motion)
+* **Media Engines:** Native Linux `yt-dlp` + `ffmpeg`
+* **Client Cleaning:** Binary array parsing for JPEG, PNG, WebP, AVIF, HEIC
+
+---
+
+## 📦 Local Development
+
+### Prerequisites
+* [Node.js 20+](https://nodejs.org/)
+* `yt-dlp` and `ffmpeg` installed on your system PATH (or located in `./bin/`)
+
+### Quickstart
 ```bash
+# Clone the repository
+git clone https://github.com/tawsifar/Zeon.git
+cd Zeon
+
+# Install dependencies
+npm install
+
+# Start development server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 🐳 Docker / Render Deployment (Free Container)
 
-## Learn More
+This repository includes a pre-configured production [`Dockerfile`](./Dockerfile) and [`.dockerignore`](./.dockerignore) designed for one-click hosting on platforms like [Render](https://render.com) or [Hugging Face Spaces](https://huggingface.co):
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+# Build the production Docker image
+docker build -t zeon:latest .
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+# Run container locally on port 3000
+docker run -p 3000:3000 zeon:latest
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
+## 🛡️ License
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+This experimental prototype code is released under the **MIT License** for personal developer education and private experimentation. See the disclaimer above for usage boundaries.

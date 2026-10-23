@@ -21,6 +21,16 @@ export const metadata: Metadata = {
   title: 'Zeon — Unified Media Downloader & Client-Side AI Metadata Stripper',
   description:
     'Ultra-fast direct media downloader for YouTube, TikTok, Instagram, Facebook, and LinkedIn with client-side AI provenance metadata remover and private video link modifier.',
+  robots: {
+    index: false,
+    follow: false,
+    nocache: true,
+    googleBot: {
+      index: false,
+      follow: false,
+      noimageindex: true,
+    },
+  },
   icons: {
     icon: [
       { url: '/zeon-icon.png', sizes: '192x192', type: 'image/png' },
