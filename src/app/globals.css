@@ -1,0 +1,145 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@layer base {
+  :root {
+    --font-sans: var(--font-sans), 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-mono: var(--font-mono), 'JetBrains Mono', monospace;
+    --bg-canvas: #060711;
+    --text-primary: #ffffff;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+    --card-bg: rgba(15, 18, 38, 0.65);
+    --card-border: rgba(255, 255, 255, 0.12);
+    --card-shadow: 0 16px 50px -10px rgba(124, 92, 255, 0.45);
+    --card-glow-bottom: rgba(124, 92, 255, 0.5);
+    --input-pill-bg: rgba(11, 14, 36, 0.7);
+    --input-pill-border: rgba(255, 255, 255, 0.08);
+    --tile-bg: rgba(18, 22, 45, 0.65);
+    --tile-border: rgba(255, 255, 255, 0.16);
+    --tile-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+  }
+
+  html.light {
+    --bg-canvas: #f8f9ff;
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+    --text-muted: #64748b;
+    --card-bg: rgba(255, 255, 255, 0.68);
+    --card-border: rgba(255, 255, 255, 0.9);
+    --card-shadow: 0 20px 60px rgba(124, 92, 255, 0.14);
+    --card-glow-bottom: rgba(124, 92, 255, 0.25);
+    --input-pill-bg: rgba(255, 255, 255, 0.85);
+    --input-pill-border: rgba(255, 255, 255, 0.95);
+    --tile-bg: rgba(255, 255, 255, 0.65);
+    --tile-border: rgba(255, 255, 255, 0.85);
+    --tile-shadow: 0 16px 36px rgba(124, 92, 255, 0.12);
+  }
+
+  html.dark {
+    --bg-canvas: #060711;
+    --text-primary: #ffffff;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+    --card-bg: rgba(15, 18, 38, 0.65);
+    --card-border: rgba(255, 255, 255, 0.12);
+    --card-shadow: 0 16px 50px -10px rgba(124, 92, 255, 0.45);
+    --card-glow-bottom: rgba(124, 92, 255, 0.5);
+    --input-pill-bg: rgba(11, 14, 36, 0.7);
+    --input-pill-border: rgba(255, 255, 255, 0.08);
+    --tile-bg: rgba(18, 22, 45, 0.65);
+    --tile-border: rgba(255, 255, 255, 0.16);
+    --tile-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+  }
+}
+
+body {
+  background-color: var(--bg-canvas);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  overflow-x: hidden;
+  min-height: 100vh;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Custom subtle scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(124, 92, 255, 0.25);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(124, 92, 255, 0.45);
+}
+
+/* Floating Animations for 3D Tiles */
+@keyframes float-slow {
+  0%, 100% {
+    transform: translateY(0px) rotate(var(--tile-rot, 0deg));
+  }
+  50% {
+    transform: translateY(-8px) rotate(var(--tile-rot, 0deg));
+  }
+}
+
+@keyframes float-slow-reverse {
+  0%, 100% {
+    transform: translateY(0px) rotate(var(--tile-rot, 0deg));
+  }
+  50% {
+    transform: translateY(8px) rotate(var(--tile-rot, 0deg));
+  }
+}
+
+@keyframes float-bubble {
+  0%, 100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  50% {
+    transform: translate(3px, -6px) scale(1.05);
+  }
+}
+
+.animate-float-slow {
+  animation: float-slow 6s ease-in-out infinite;
+}
+
+.animate-float-slow-reverse {
+  animation: float-slow-reverse 7s ease-in-out infinite;
+}
+
+.animate-float-bubble {
+  animation: float-bubble 5s ease-in-out infinite;
+}
+
+/* Glassmorphism Classes */
+.glass-card-main {
+  background: var(--card-bg);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  border: 1px solid var(--card-border);
+  box-shadow: var(--card-shadow);
+}
+
+.glass-pill-input {
+  background: var(--input-pill-bg);
+  border: 1px solid var(--input-pill-border);
+}
+
+.glass-tile {
+  background: var(--tile-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--tile-border);
+  box-shadow: var(--tile-shadow);
+}
