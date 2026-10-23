@@ -1,9 +1,12 @@
 # ZEON — Experimental Media Toolkit & Privacy Engine
 
+> ### 🚧 ACTIVE DEVELOPMENT STATUS
+> **PLEASE NOTE:** This project is **currently under active development and is not ready for full or production use**. It may contain minor bugs, intermittent stream handling quirks, or unfinished edge cases as features continue to be refined and tested.
+
 > ### ⚠️ STRICT LEGAL NOTICE & RESEARCH DISCLAIMER
 > **PLEASE READ BEFORE CLONING OR RUNNING THIS CODE:**
 >
-> 1. **NON-COMMERCIAL PROTOTYPE ONLY:** This repository and software application is strictly an **experimental, educational prototype created solely for personal testing, academic research, and private developer evaluation**.
+> 1. **NON-COMMERCIAL PROTOTYPE (WORK IN PROGRESS):** This repository and software application is strictly an **experimental, educational prototype created solely for personal testing, academic research, and private developer evaluation**. It is not intended for general public reliance.
 > 2. **NO PUBLIC MARKETING OR COMMERCIAL OPERATION:** This project is **not** a commercial product, is not being marketed, does not run advertisements, does not solicit donations or subscriptions, and is not operated as a public commercial service.
 > 3. **NO SEARCH ENGINE INDEXING:** This website is deliberately configured to **block all search engine crawlers and web robots** (`Disallow: /`, `noindex, nofollow`, no cache). It is intentionally kept unindexed from Google, Bing, Yahoo, DuckDuckGo, and other web indexers.
 > 4. **NO HOSTING OR DISTRIBUTION OF COPYRIGHTED CONTENT:** Zeon **does not host, cache, index, or distribute any media files or copyright-protected content** on its servers. All transient operations are piped on-the-fly directly to the end-user's local system for authorized personal backup purposes under fair-use principles. Users are solely responsible for ensuring they possess lawful access to content they interact with.
